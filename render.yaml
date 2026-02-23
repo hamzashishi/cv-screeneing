@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: cv-screening-backend
+    env: python
+    rootDir: cv-screening-backend
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    startCommand: gunicorn cv_screening_project.wsgi:application
+    aptPackages:
+      - libjpeg-dev
+      - zlib1g-dev
