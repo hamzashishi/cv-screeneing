@@ -276,6 +276,50 @@ npm run build
 # Serve with nginx or similar
 ```
 
+### Recommended Hosting Split
+
+- Frontend: Vercel
+- Backend: Render
+
+This project is split into a Vite React frontend and a Django backend. The frontend fits Vercel well, while the backend is better on Render because it uses Django, uploads, static/media handling, and a long-running Python app.
+
+### Deploy Frontend to Vercel
+
+In Vercel, create a project from this repository and use:
+
+- Root directory: `cv-screening-frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Framework preset: `Vite`
+
+Set this environment variable in Vercel:
+
+```env
+VITE_API_URL=https://your-backend-domain/api
+```
+
+The frontend now includes a `vercel.json` rewrite so React Router routes like `/login` and `/hr-dashboard` work after refresh.
+
+### Deploy Backend to Render
+
+This repo already includes `render.yaml`. For Render, point the service at `cv-screening-backend` and set production environment variables such as:
+
+```env
+DEBUG=False
+SECRET_KEY=your-production-secret
+ALLOWED_HOSTS=your-backend-domain.onrender.com
+CORS_ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app
+JWT_SECRET=your-jwt-secret
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=your-db-name
+DB_USER=your-db-user
+DB_PASSWORD=your-db-password
+DB_HOST=your-db-host
+DB_PORT=5432
+```
+
+If you keep using SQLite locally, do not use it for production deployment.
+
 ## License
 
 MIT License - see LICENSE file for details
