@@ -367,6 +367,8 @@ class JobApplicationSerializer(serializers.ModelSerializer):
         pdf_name = f"{cv.id}.pdf"
         pdf_path = os.path.join(pdf_dir, pdf_name)
         if not os.path.exists(pdf_path):
+            if os.name != 'nt':
+                return ''
             try:
                 from docx2pdf import convert
                 convert(cv.cv_file.path, pdf_path)
