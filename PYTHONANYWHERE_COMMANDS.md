@@ -7,6 +7,7 @@ Use these exact commands in the PythonAnywhere Bash console to deploy your backe
 ```bash
 cd ~
 rm -rf cv-screeneing
+rm -rf ~/.cache/pip
 git clone https://github.com/hamzashishi/cv-screeneing.git
 cd cv-screeneing/cv-screening-backend
 ```
@@ -28,10 +29,18 @@ source ~/.virtualenvs/cv-screening/bin/activate
 ## 3. Install dependencies
 
 ```bash
-pip install --upgrade pip setuptools wheel
-pip install -r requirements.txt
+pip install --upgrade pip setuptools wheel --no-cache-dir
+pip install -r requirements.txt --no-cache-dir
 python -m spacy download en_core_web_sm
 ```
+
+If you still hit a quota issue, free space and try again:
+
+```bash
+df -h
+du -sh ~/* | sort -h | tail -20
+rm -rf ~/.cache/pip
+``` 
 
 ## 4. Copy your environment file
 
