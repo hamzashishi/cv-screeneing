@@ -29,9 +29,16 @@ source ~/.virtualenvs/cv-screening/bin/activate
 ## 3. Install dependencies
 
 ```bash
-pip install --upgrade pip setuptools wheel --no-cache-dir
-pip install -r requirements.txt --no-cache-dir
+python -m pip install --upgrade pip setuptools wheel --no-cache-dir
+python -m pip install -r requirements.txt --no-cache-dir
 python -m spacy download en_core_web_sm
+```
+
+Confirm Django is installed before running migrations:
+
+```bash
+python -m pip show Django
+python -c "import django; print(django.get_version())"
 ```
 
 If you still hit a quota issue, free space and try again:
@@ -44,10 +51,10 @@ rm -rf ~/.cache/pip
 
 ## 4. Copy your environment file
 
-If you already have the file in the repo:
+If you already have the file in the repo and are in `cv-screeneing/cv-screening-backend`:
 
 ```bash
-cp cv-screening-backend/.env.production ~/.env
+cp .env.example ~/.env
 chmod 600 ~/.env
 ```
 
