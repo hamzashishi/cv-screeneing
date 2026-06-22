@@ -29,6 +29,7 @@ source ~/.virtualenvs/cv-screening/bin/activate
 ## 3. Install dependencies
 
 ```bash
+rm -rf ~/.cache/pip /tmp/pip-* ~/.cache/pipenv
 python -m pip install --upgrade pip setuptools wheel --no-cache-dir
 python -m pip install -r requirements.txt --no-cache-dir
 python -m spacy download en_core_web_sm
@@ -46,7 +47,8 @@ If you still hit a quota issue, free space and try again:
 ```bash
 df -h
 du -sh ~/* | sort -h | tail -20
-rm -rf ~/.cache/pip
+rm -rf ~/.cache/pip /tmp/pip-* ~/.cache/pipenv
+rm -rf ~/.virtualenvs/cv-screening
 ``` 
 
 ## 4. Copy your environment file
