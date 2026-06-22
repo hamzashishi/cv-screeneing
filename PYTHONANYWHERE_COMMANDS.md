@@ -6,12 +6,10 @@ Use these exact commands in the PythonAnywhere Bash console to deploy your backe
 
 ```bash
 cd ~
-rm -rf cv-screening
-git clone https://github.com/YOUR_GITHUB_USERNAME/cv-screening.git
-cd cv-screening/cv-screening-backend
+rm -rf cv-screeneing
+git clone https://github.com/hamzashishi/cv-screeneing.git
+cd cv-screeneing/cv-screening-backend
 ```
-
-Replace `YOUR_GITHUB_USERNAME` with your GitHub username.
 
 ## 2. Create and activate the virtual environment
 
