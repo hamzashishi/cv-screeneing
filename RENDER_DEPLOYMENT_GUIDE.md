@@ -24,10 +24,10 @@ The web service is configured to:
 4. Select the `hamzashishi/cv-screening` repository
 5. Render should detect `render.yaml`
 6. Confirm the service settings:
-   - **Root Directory:** `cv-screening-backend`
-   - **Build Command:** already defined in `render.yaml`
+   - **Root Directory:** `.`
+   - **Environment:** `Docker`
+   - **Dockerfile Path:** `Dockerfile`
    - **Start Command:** already defined in `render.yaml`
-   - **Environment:** `Python`
 
 ## 3. Add environment variables
 
