@@ -8,7 +8,7 @@ except ImportError:
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-your-secret-key-here-change-in-production')
+SECRET_KEY = config('DJANGO_SECRET_KEY', default=config('SECRET_KEY', default='django-insecure-your-secret-key-here-change-in-production'))
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
@@ -127,9 +127,9 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=False, cast=bool)
 
-JWT_SECRET = config('JWT_SECRET', default='your-jwt-secret-key')
+JWT_SECRET = config('JWT_SECRET_KEY', default=config('JWT_SECRET', default='your-jwt-secret-key'))
 JWT_ALGORITHM = config('JWT_ALGORITHM', default='HS256')
-JWT_EXPIRATION_HOURS = config('JWT_EXPIRATION_HOURS', default=24, cast=int)
+JWT_EXPIRATION_HOURS = config('JWT_EXPIRATION_DELTA', default=config('JWT_EXPIRATION_HOURS', default=24, cast=int), cast=int)
 
 # Celery Configuration
 CELERY_BROKER_URL = config('REDIS_URL', default='redis://localhost:6379/0')
