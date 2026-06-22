@@ -2,6 +2,8 @@
 
 Use these exact commands in the PythonAnywhere Bash console to deploy your backend.
 
+> Note: PythonAnywhere free accounts often have very low disk quota. If `pip install -r requirements.txt` fails, use the core requirements fallback below or upgrade your PythonAnywhere plan.
+
 ## 1. Clone the repository
 
 ```bash
@@ -34,6 +36,14 @@ python -m pip install --upgrade pip setuptools wheel --no-cache-dir
 python -m pip install -r requirements.txt --no-cache-dir
 python -m spacy download en_core_web_sm
 ```
+
+If this still fails because of disk quota, install the core PythonAnywhere package set first:
+
+```bash
+python -m pip install -r requirements-pythonanywhere-core.txt --no-cache-dir
+```
+
+This will install the Django backend without the heaviest NLP/document packages. Core app startup and admin/API routes will work, but advanced CV parsing features will require the full dependencies and more disk space.
 
 Confirm Django is installed before running migrations:
 

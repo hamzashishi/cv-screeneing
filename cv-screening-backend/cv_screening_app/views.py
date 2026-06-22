@@ -5,12 +5,16 @@ from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.conf import settings
 from django.shortcuts import get_object_or_404
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 from django.utils import timezone
 from django.core.mail import send_mail
 from django.core.files.base import ContentFile
 from django.http import HttpResponse
 from html import escape
-from docx import Document
+try:
+    from docx import Document
+except ImportError:
+    Document = None
 import io
 import json
 import re
@@ -239,20 +243,26 @@ class UserAuthViewSet(viewsets.ViewSet):
         """User login or return usage info for GET"""
         if request.method == 'GET':
             return Response({
-                'info': 'POST JSON to login. Required: email and password'
+                'info': 'POST JSON to login. Required: email or username, and password'
             }, status=status.HTTP_200_OK)
-        email = request.data.get('email')
+        identifier = (
+            request.data.get('email')
+            or request.data.get('username')
+            or request.data.get('identifier')
+            or ''
+        ).strip()
         password = request.data.get('password')
         
-        if not email or not password:
+        if not identifier or not password:
             return Response(
-                {'error': 'Email and password are required'},
+                {'error': 'Email or username, and password are required'},
                 status=status.HTTP_400_BAD_REQUEST
             )
         
         try:
-            # Login by email only (case-insensitive)
-            user = CustomUser.objects.filter(email__iexact=email).first()
+            user = CustomUser.objects.filter(
+                Q(email__iexact=identifier) | Q(username__iexact=identifier)
+            ).first()
 
             if user and user.check_password(password):
                 if not user.is_active or not user.is_active_user:
@@ -1050,6 +1060,9 @@ class CVUploadViewSet(viewsets.ModelViewSet):
                         merged[-1][1] = max(merged[-1][1], end)
                 total_months = sum(max(0, end - start + 1) for start, end in merged)
                 total_years_experience = round(total_months / 12.0, 2)
+
+        if Document is None:
+            return Response({'error': 'python-docx is not installed on this server.'}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
         doc = Document()
         doc.add_heading('CARRICULUM VITAE (CV)', level=1)

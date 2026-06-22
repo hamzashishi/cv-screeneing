@@ -1,18 +1,35 @@
 import re
 from typing import Dict, List, Optional, Tuple
 
-import nltk
-import pdfplumber
-import spacy
 from django.conf import settings
 from django.utils import timezone
-from docx import Document
 
-# Download required NLTK data
 try:
-    nltk.data.find('tokenizers/punkt')
-except LookupError:
-    nltk.download('punkt')
+    import nltk
+except ImportError:
+    nltk = None
+
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
+
+try:
+    import spacy
+except ImportError:
+    spacy = None
+
+try:
+    from docx import Document
+except ImportError:
+    Document = None
+
+# Download required NLTK data if available.
+if nltk is not None:
+    try:
+        nltk.data.find('tokenizers/punkt')
+    except LookupError:
+        nltk.download('punkt')
 
 
 class CVParser:
@@ -55,18 +72,28 @@ class CVParser:
             'agile': ['agile'],
             'scrum': ['scrum'],
         }
-        try:
-            self.nlp = spacy.load(settings.SPACY_MODEL)
-        except Exception:
-            # Production-safe fallback if model is unavailable.
-            self.nlp = spacy.blank('en')
-        if 'parser' not in self.nlp.pipe_names and 'senter' not in self.nlp.pipe_names:
-            if 'sentencizer' not in self.nlp.pipe_names:
-                self.nlp.add_pipe('sentencizer')
+        if spacy is not None:
+            try:
+                self.nlp = spacy.load(settings.SPACY_MODEL)
+            except Exception:
+                try:
+                    self.nlp = spacy.blank('en')
+                except Exception:
+                    self.nlp = None
+        else:
+            self.nlp = None
+
+        if self.nlp is not None:
+            if 'parser' not in self.nlp.pipe_names and 'senter' not in self.nlp.pipe_names:
+                if 'sentencizer' not in self.nlp.pipe_names:
+                    self.nlp.add_pipe('sentencizer')
 
     def extract_text_from_pdf(self, pdf_path: str) -> str:
         """Extract text from PDF file"""
         text = ""
+        if pdfplumber is None:
+            print("pdfplumber is not installed; PDF extraction is unavailable.")
+            return text
         try:
             with pdfplumber.open(pdf_path) as pdf:
                 for page in pdf.pages:
@@ -82,6 +109,9 @@ class CVParser:
     def extract_text_from_docx(self, docx_path: str) -> str:
         """Extract text from DOCX file"""
         text = ""
+        if Document is None:
+            print("python-docx is not installed; DOCX extraction is unavailable.")
+            return text
         try:
             doc = Document(docx_path)
             for paragraph in doc.paragraphs:
@@ -111,9 +141,19 @@ class CVParser:
         matches = re.findall(pattern, text)
         return matches[0] if matches else None
 
+    def _parse_text(self, text: str):
+        if self.nlp is None:
+            return None
+        try:
+            return self.nlp(text)
+        except Exception:
+            return None
+
     def extract_name(self, text: str) -> Optional[str]:
         """Extract name from text using NLP"""
-        doc = self.nlp(text[:500])
+        doc = self._parse_text(text[:500])
+        if doc is None:
+            return None
         for ent in getattr(doc, 'ents', []):
             if ent.label_ == 'PERSON':
                 return ent.text
@@ -121,7 +161,9 @@ class CVParser:
 
     def extract_location(self, text: str) -> Optional[str]:
         """Extract location from text"""
-        doc = self.nlp(text[:1000])
+        doc = self._parse_text(text[:1000])
+        if doc is None:
+            return None
         for ent in getattr(doc, 'ents', []):
             if ent.label_ == 'GPE':
                 return ent.text
@@ -143,7 +185,9 @@ class CVParser:
         """Extract education information"""
         education_keywords = ['degree', 'bachelor', 'master', 'phd', 'diploma', 'certificate', 'university', 'college']
         education_list = []
-        doc = self.nlp(text)
+        doc = self._parse_text(text)
+        if doc is None:
+            return education_list
         for sent in getattr(doc, 'sents', []):
             sent_text = sent.text
             if any(keyword in sent_text.lower() for keyword in education_keywords):
@@ -169,16 +213,17 @@ class CVParser:
         """Extract work experience and estimate years."""
         experience_list = []
         experience_keywords = ['experience', 'worked', 'employed', 'job', 'position', 'role', 'engineer', 'developer', 'manager']
-        doc = self.nlp(text)
+        doc = self._parse_text(text)
 
         structured_entries, intervals = self._extract_structured_experience(text)
         if structured_entries:
             experience_list.extend(structured_entries)
 
-        for sent in getattr(doc, 'sents', []):
-            sent_text = sent.text
-            if any(keyword in sent_text.lower() for keyword in experience_keywords):
-                experience_list.append({'text': sent_text})
+        if doc is not None:
+            for sent in getattr(doc, 'sents', []):
+                sent_text = sent.text
+                if any(keyword in sent_text.lower() for keyword in experience_keywords):
+                    experience_list.append({'text': sent_text})
 
         total_years = self._years_from_intervals(intervals)
         return experience_list, (total_years if total_years > 0 else None)
