@@ -39,23 +39,18 @@ DigitalOcean will automatically:
 
 ## Step 4: Set Environment Variables
 
-In the **App Settings** tab, add these environment variables:
+In the **App Settings** tab, add these exact environment variables:
 
 ```
 DEBUG=False
 DJANGO_SECRET_KEY=your-secret-key-here-min-50-chars
+DATABASE_URL=postgresql://user:password@host:port/dbname
 ALLOWED_HOSTS=your-app-name.ondigitalocean.app
 CORS_ALLOWED_ORIGINS=https://cv-screening-ten.vercel.app,https://your-app-name.ondigitalocean.app
-DB_ENGINE=django.db.backends.postgresql
-DATABASE_URL=postgresql://user:password@host:port/dbname
-
-# Email settings (optional, for password resets)
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
-
-# JWT settings (from .env.example)
 JWT_SECRET_KEY=your-jwt-secret-here
 JWT_ALGORITHM=HS256
 JWT_EXPIRATION_DELTA=3600
+EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 ```
 
 **Note**: DigitalOcean provides `DATABASE_URL` automatically. You don't need to set individual DB fields.
