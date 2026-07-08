@@ -1,85 +1,68 @@
-# Render Deployment Guide (Free tier)
+# Render Deployment Guide
 
-Use Render to deploy your Django backend free and keep your React frontend on Vercel.
+Essential steps to deploy the Django backend on Render.
 
-## Why Render?
-- Free web service tier available
-- Free PostgreSQL database available
-- Supports GitHub auto-deploy
-- Your repo already contains `render.yaml`
+## 1. Use the included repo config
 
-## 1. Prepare your repo
+This repository already includes `render.yaml` and `Dockerfile` at the root.
+Render will deploy the Django backend from the `cv-screening-backend` folder.
 
-Your repo includes `render.yaml` at the root, which points Render at `cv-screening-backend`.
-The web service is configured to:
-- install dependencies
-- collect static files
-- run Gunicorn
-
-## 2. Create the Render web service
+## 2. Create the web service
 
 1. Go to https://dashboard.render.com
 2. Click **New** → **Web Service**
-3. Connect your GitHub account
-4. Select the `hamzashishi/cv-screening` repository
-5. Render should detect `render.yaml`
-6. Confirm the service settings:
-   - **Root Directory:** `.`
-   - **Environment:** `Docker`
-   - **Dockerfile Path:** `Dockerfile`
-   - **Start Command:** already defined in `render.yaml`
+3. Connect GitHub and select your repository
+4. Confirm Render detects `render.yaml`
+5. Set the service root to `.` and use the provided Docker settings
 
-## 3. Add environment variables
+## 3. Add required environment variables
 
-In the Render dashboard for your web service, add these variables:
+Set these values in Render:
 
-```
-DJANGO_SECRET_KEY=your-very-long-random-secret-key
+```env
+DJANGO_SECRET_KEY=your-production-secret-key
+SECRET_KEY=your-production-secret-key
 ALLOWED_HOSTS=your-render-app.onrender.com
 CORS_ALLOWED_ORIGINS=https://cv-screening-ten.vercel.app,https://your-render-app.onrender.com
 JWT_SECRET_KEY=your-jwt-secret-key
-JWT_ALGORITHM=HS256
-JWT_EXPIRATION_DELTA=3600
-EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 DEBUG=False
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_HOST_USER=saidshishi919@gmail.com
+EMAIL_HOST_PASSWORD=your-email-app-password
+DEFAULT_FROM_EMAIL=saidshishi919@gmail.com
+DATABASE_URL=postgresql://user:password@host:port/dbname
+SECURE_SSL_REDIRECT=True
 ```
 
-### Database
+Use PostgreSQL for the Render database. If you attach a Render PostgreSQL managed database, Render will provide `DATABASE_URL` automatically.
 
-Render will create a database if you attach one.
-If you use Render PostgreSQL, it will provide a `DATABASE_URL` environment variable automatically.
+## 4. Run migrations
 
-## 4. Configure the frontend
-
-Update `cv-screening-frontend/.env.production` to use the Render app domain:
-
-```env
-VITE_API_URL=https://your-render-app.onrender.com/api
-```
-
-Then redeploy your frontend on Vercel or rebuild it locally if you are serving it yourself.
-
-## 5. Run migrations
-
-After the web service is deployed, open the Render shell and run:
+After the service deploys, open the Render shell and run:
 
 ```bash
 python manage.py migrate
 python manage.py createsuperuser
 ```
 
-## 6. Verify
+## 5. Verify
 
-Open the backend URL:
+Open `https://your-render-app.onrender.com/api/` and confirm the API root responds.
 
+## 6. Update frontend
+
+In `cv-screening-frontend/.env.production`, set:
+
+```env
+VITE_API_URL=https://your-render-app.onrender.com/api
 ```
-https://your-render-app.onrender.com/api/
-```
 
-Open the frontend and verify requests are sent to the Render backend.
+Then rebuild or redeploy the frontend.
 
-## Notes
+## Troubleshooting
 
-- Render free tier gives a small PostgreSQL database and a free web service.
-- Do not use `python manage.py migrate` in `startCommand` if you prefer manual control. In `render.yaml`, the service now only starts Gunicorn.
-- If you want the backend to auto-migrate during deploy, you can run migrations manually from Render shell after the first deployment.
+- If deployment fails, inspect Render build logs.
+- If static files are missing, ensure `collectstatic` runs successfully.
+- If CORS fails, add the frontend domain to `CORS_ALLOWED_ORIGINS`.
