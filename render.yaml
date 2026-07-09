@@ -4,7 +4,7 @@ services:
     env: docker
     rootDir: .
     dockerfilePath: Dockerfile
-    startCommand: gunicorn -w 4 -b 0.0.0.0:$PORT cv_screening_project.wsgi:application
+    startCommand: python manage.py migrate && python manage.py collectstatic --noinput && gunicorn cv_screening_project.wsgi:application --timeout 120 --workers 1 --threads 2
     envVars:
       - key: DEBUG
         value: False
