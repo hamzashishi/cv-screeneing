@@ -31,8 +31,8 @@ c:\Users\hp\Desktop\data\
 ├─ 📖 README_HR.md (existing)
 │  └─ HR-specific documentation
 │
-├─ 🔧 render.yaml (existing)
-│  └─ Render deployment config (alternative to PythonAnywhere)
+├─ 🔧 docker-compose.yml (existing)
+│  └─ Container orchestration for backend and PostgreSQL
 │
 │
 ├─ 📁 cv-screening-backend/

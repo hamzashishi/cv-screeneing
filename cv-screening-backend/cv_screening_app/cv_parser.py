@@ -1,18 +1,19 @@
+import os
 import re
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, List, Dict, Tuple
 
 from django.conf import settings
 from django.utils import timezone
 
 try:
-    import nltk
-except ImportError:
-    nltk = None
-
-try:
     import pdfplumber
 except ImportError:
     pdfplumber = None
+
+try:
+    import nltk
+except ImportError:
+    nltk = None
 
 try:
     import spacy
@@ -24,16 +25,39 @@ try:
 except ImportError:
     Document = None
 
-# Download required NLTK data if available.
+
+# ---------------------------------------------------------------------------
+# IMPORTANT: Do NOT download NLTK/spaCy data at import time or at request
+# time in a web server. That triggers a network call on every gunicorn
+# worker boot, which is slow and can exceed gunicorn's --timeout, causing
+# WORKER TIMEOUT -> SIGKILL crash loops (this is what was happening).
+#
+# Instead, NLTK 'punkt' and the spaCy model must be downloaded ONCE at
+# build time (in the Docker image), not at runtime.
+# Here we only check if the data is already present. If it's missing, we
+# log a warning and continue in degraded mode instead of blocking startup.
+# ---------------------------------------------------------------------------
+NLTK_PUNKT_AVAILABLE = False
 if nltk is not None:
     try:
         nltk.data.find('tokenizers/punkt')
+        NLTK_PUNKT_AVAILABLE = True
     except LookupError:
-        nltk.download('punkt')
+        print(
+            "WARNING: NLTK 'punkt' tokenizer data not found. "
+            "It must be downloaded at build time, e.g.: "
+            "python -m nltk.downloader -d /usr/share/nltk_data punkt "
+            "Continuing without it."
+        )
 
 
 class CVParser:
     """CV/Resume parsing and text extraction"""
+
+    # Class-level cache so the spaCy model is loaded only ONCE per process
+    # (per gunicorn worker), not once per CVParser() instantiation.
+    _nlp_cache = None
+    _nlp_load_attempted = False
 
     def __init__(self):
         self.current_year = timezone.now().year
@@ -72,21 +96,44 @@ class CVParser:
             'agile': ['agile'],
             'scrum': ['scrum'],
         }
-        if spacy is not None:
-            try:
-                self.nlp = spacy.load(settings.SPACY_MODEL)
-            except Exception:
-                try:
-                    self.nlp = spacy.blank('en')
-                except Exception:
-                    self.nlp = None
-        else:
-            self.nlp = None
+        # nlp model is lazy-loaded on first use, not at __init__ time.
+        self._nlp = None
 
-        if self.nlp is not None:
-            if 'parser' not in self.nlp.pipe_names and 'senter' not in self.nlp.pipe_names:
-                if 'sentencizer' not in self.nlp.pipe_names:
-                    self.nlp.add_pipe('sentencizer')
+    @property
+    def nlp(self):
+        """
+        Lazily load the spaCy model once per process and cache it on the
+        class, so multiple CVParser() instances in the same worker reuse
+        the same loaded model instead of reloading it every time.
+        """
+        if CVParser._nlp_cache is not None:
+            return CVParser._nlp_cache
+
+        if CVParser._nlp_load_attempted:
+            # We already tried and failed in this process; don't retry.
+            return None
+
+        CVParser._nlp_load_attempted = True
+
+        if spacy is None:
+            return None
+
+        model_name = getattr(settings, 'SPACY_MODEL', 'en_core_web_sm')
+        try:
+            model = spacy.load(model_name)
+        except Exception:
+            try:
+                model = spacy.blank('en')
+            except Exception:
+                model = None
+
+        if model is not None:
+            if 'parser' not in model.pipe_names and 'senter' not in model.pipe_names:
+                if 'sentencizer' not in model.pipe_names:
+                    model.add_pipe('sentencizer')
+
+        CVParser._nlp_cache = model
+        return model
 
     def extract_text_from_pdf(self, pdf_path: str) -> str:
         """Extract text from PDF file"""
@@ -379,7 +426,9 @@ class CVParser:
         """Extract certifications"""
         cert_keywords = ['certification', 'certified', 'aws', 'azure', 'google', 'comptia', 'ccna', 'cissp', 'cpa']
         certifications = []
-        doc = self.nlp(text)
+        doc = self._parse_text(text)
+        if doc is None:
+            return certifications
         for sent in getattr(doc, 'sents', []):
             sent_text = sent.text
             if any(keyword in sent_text.lower() for keyword in cert_keywords):

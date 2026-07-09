@@ -1,0 +1,37 @@
+version: '3.9'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cv-screening-backend
+    restart: unless-stopped
+    environment:
+      DEBUG: ${DEBUG:-False}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
+      SECRET_KEY: ${DJANGO_SECRET_KEY:-change-me}
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-localhost,127.0.0.1,backend}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173}
+      # SQLite just points at a file path, no host/user/password needed.
+      # This path must match wherever your Django settings.py DATABASES
+      # config expects the .sqlite3 file to live (commonly BASE_DIR / 'db.sqlite3').
+      DATABASE_URL: ${DATABASE_URL:-sqlite:////app/data/db.sqlite3}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-me}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRATION_DELTA: ${JWT_EXPIRATION_DELTA:-3600}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:3001,http://localhost:5173}
+      SECURE_SSL_REDIRECT: ${SECURE_SSL_REDIRECT:-False}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-False}
+      CSRF_COOKIE_SECURE: ${CSRF_COOKIE_SECURE:-False}
+    ports:
+      - "8000:8080"
+    volumes:
+      - ./cv-screening-backend/media:/app/media
+      - ./cv-screening-backend/staticfiles:/app/staticfiles
+      # Persists the SQLite database file outside the container, so your
+      # data survives rebuilds/restarts of the container.
+      - sqlite_data:/app/data
+
+volumes:
+  sqlite_data:

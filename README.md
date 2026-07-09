@@ -279,9 +279,9 @@ npm run build
 ### Recommended Hosting Split
 
 - Frontend: Vercel
-- Backend: Render
+- Backend: Contabo VPS with Docker
 
-This project is split into a Vite React frontend and a Django backend. The frontend fits Vercel well, while the backend is better on Render because it uses Django, uploads, static/media handling, and a long-running Python app.
+This project is split into a Vite React frontend and a Django backend. The frontend fits Vercel well, while the backend is better deployed on a Contabo VPS using Docker because it uses Django, uploads, static/media handling, and a long-running Python app.
 
 ### Deploy Frontend to Vercel
 
@@ -300,22 +300,23 @@ VITE_API_URL=https://your-backend-domain/api
 
 The frontend now includes a `vercel.json` rewrite so React Router routes like `/login` and `/hr-dashboard` work after refresh.
 
-### Deploy Backend to Render
+### Deploy Backend to Contabo with Docker
 
-This repo already includes `render.yaml`. For Render, point the service at `cv-screening-backend` and set production environment variables such as:
+This repository now includes a Docker setup for the backend. On your Contabo VPS, copy the example environment file and start the stack:
+
+```bash
+cp cv-screening-backend/.env.example cv-screening-backend/.env
+docker compose up -d --build
+```
+
+Set your production values in the copied environment file, especially:
 
 ```env
 DEBUG=False
-SECRET_KEY=your-production-secret
-ALLOWED_HOSTS=your-backend-domain.onrender.com
-CORS_ALLOWED_ORIGINS=https://your-frontend-domain.vercel.app
-JWT_SECRET=your-jwt-secret
-DB_ENGINE=django.db.backends.postgresql
-DB_NAME=your-db-name
-DB_USER=your-db-user
-DB_PASSWORD=your-db-password
-DB_HOST=your-db-host
-DB_PORT=5432
+DJANGO_SECRET_KEY=your-production-secret
+ALLOWED_HOSTS=your-domain.com,api.your-domain.com,backend
+CORS_ALLOWED_ORIGINS=https://your-frontend-domain.com,https://api.your-domain.com
+DATABASE_URL=postgresql://postgres:postgres@db:5432/cv_screening
 ```
 
 If you keep using SQLite locally, do not use it for production deployment.
