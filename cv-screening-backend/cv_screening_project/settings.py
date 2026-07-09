@@ -12,8 +12,8 @@ SECRET_KEY = config('DJANGO_SECRET_KEY', default=config('SECRET_KEY', default='d
 
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='').split(',') if config('CSRF_TRUSTED_ORIGINS', default='') else []
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,cv-screening-backend.onrender.com').split(',')
+CSRF_TRUSTED_ORIGINS = config('CSRF_TRUSTED_ORIGINS', default='https://cv-screening-ten.vercel.app,https://cv-screening-backend.onrender.com').split(',') if config('CSRF_TRUSTED_ORIGINS', default='https://cv-screening-ten.vercel.app,https://cv-screening-backend.onrender.com') else []
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -119,7 +119,7 @@ REST_FRAMEWORK = {
     ],
 }
 
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:3001').split(',')
+CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:3001,https://cv-screening-ten.vercel.app,https://cv-screening-backend.onrender.com').split(',')
 
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
