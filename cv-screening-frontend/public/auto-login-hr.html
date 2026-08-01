@@ -1,0 +1,42 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Auto HR Login</title>
+  </head>
+  <body>
+    <p>Attempting auto-login and redirect to HR dashboard...</p>
+    <script>
+      // Credentials auto-created by the backend (for local dev only)
+      const email = 'auto_hr+1771483363@example.com';
+      const password = 'Password123!';
+      const apiBase = window.location.origin.replace(/:\d+$/, ':3001').startsWith('http') ? 'http://localhost:8000/api' : '/api';
+
+      async function doLogin() {
+        try {
+          const res = await fetch('http://localhost:8000/api/users/login/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+
+          if (!res.ok) {
+            const err = await res.json().catch(() => ({}));
+            document.body.innerHTML = '<pre>Login failed: ' + JSON.stringify(err, null, 2) + '</pre>';
+            return;
+          }
+
+          const data = await res.json();
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          // Redirect to HR dashboard
+          window.location.href = '/hr-dashboard';
+        } catch (e) {
+          document.body.innerHTML = '<pre>Network error: ' + e.message + '</pre>';
+        }
+      }
+
+      doLogin();
+    </script>
+  </body>
+</html>
